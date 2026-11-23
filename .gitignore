@@ -1,0 +1,6 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+screenshots/debug_*.png
+dataset/images/
