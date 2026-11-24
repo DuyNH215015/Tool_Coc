@@ -11,8 +11,8 @@ CONFIRM_CLOSE = (1131, 55)                    # nút X đóng popup
 WALL_MIN_GOLD = 10_000_000
 WALL_MIN_ELIXIR = 10_000_000
 WALL_MAX_PRICE = 20_000_000
-MAX_WALLS_PER_CYCLE = 10
-RESOURCE_OCR_EVERY_BATTLES = 10
+MAX_WALLS_PER_CYCLE = 10 # số tường tối đa được nâng trong mỗi chu kỳ
+RESOURCE_OCR_EVERY_BATTLES = 10 # đánh bao nhiêu trận thì đọc lại số tài nguyên, tránh OCR sai do số thay đổi
 WALL_STATE_FILE = str(Path(__file__).with_name("wall_state.json"))
 
 # ---------- Khu vực và mật độ quét ----------

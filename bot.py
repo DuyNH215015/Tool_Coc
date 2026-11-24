@@ -7,6 +7,7 @@ from pathlib import Path
 import cv2
 import ocr
 import vision
+from recovery import LauncherRecovery
 from adb import Device
 
 
@@ -15,6 +16,7 @@ class Bot:
         """Store the account configuration and connect to its Android device."""
         self.c = cfg
         self.dev = Device(cfg.DEVICE)
+        self.launcher_recovery = LauncherRecovery()
         state = self._load_wall_state()
         battle_count = state.get("battles_since_resource_ocr", 0)
         if not isinstance(battle_count, int) or isinstance(battle_count, bool) or battle_count < 0:
@@ -77,15 +79,20 @@ class Bot:
             sorted(elixir_values)[len(elixir_values) // 2]
 
     # ---------- Trạng thái trận ----------
-    def in_battle(self):
+    def in_battle(self, screen=None):
         """Đã vào trận khi đọc được chiến lợi phẩm vàng."""
-        screen = self.dev.screenshot()
+        if screen is None:
+            screen = self.dev.screenshot()
         return ocr.read_number(screen, self.c.ENEMY_GOLD) is not None
 
     def wait_for_battle(self, timeout=45):
         """Poll for battle HUD detection until timeout; return whether it appeared."""
-        for _ in range(timeout // 3):
-            if self.in_battle():
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            screen = self.dev.screenshot()
+            if self.launcher_recovery.reopen_if_needed(self.dev, screen, self.log):
+                return None
+            if self.in_battle(screen):
                 return True
             time.sleep(3)
         return False
@@ -328,6 +335,9 @@ class Bot:
         """
         self.log("Đi đánh")
 
+        screen = self.dev.screenshot()
+        self.launcher_recovery.reopen_if_needed(self.dev, screen, self.log)
+
         # 1. Mở menu Chiến đấu, bấm Tìm trận.
         #    Bấm thêm "Tấn công!" phòng khi game mở màn Quân đội.
         self.tap(self.c.ATTACK_BUTTON, 3)
@@ -335,7 +345,11 @@ class Bot:
         self.tap(self.c.ARMY_ATTACK, 3)
 
         # 2. Chờ vào trận
-        if not self.wait_for_battle():
+        battle_started = self.wait_for_battle()
+        if battle_started is None:
+            self.log("Game vừa được mở lại, sẽ thử tìm trận ở vòng tiếp theo")
+            return False
+        if not battle_started:
             self.log("Không vào được trận, thoát")
             self.tap(self.c.SEARCH_CANCEL, 3)
             return False
@@ -348,7 +362,11 @@ class Bot:
                 break
             self.log(f"Bỏ qua, Next lần {i + 1}")
             self.tap(self.c.NEXT_BUTTON, 5)
-            if not self.wait_for_battle(30):
+            battle_started = self.wait_for_battle(30)
+            if battle_started is None:
+                self.log("Game vừa được mở lại, sẽ thử tìm trận ở vòng tiếp theo")
+                return False
+            if not battle_started:
                 self.log("Mất trận sau khi Next, thoát")
                 self.tap(self.c.SEARCH_CANCEL, 3)
                 return False
