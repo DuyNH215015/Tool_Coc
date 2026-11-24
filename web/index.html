@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COC Bot - cấu hình và điều khiển</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, "Segoe UI", sans-serif;
+      background: #10151d;
+      color: #e8edf5;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    body { margin: 0; min-width: 360px; }
+
+    button, select, input {
+      font: inherit;
+      color: inherit;
+    }
+
+    button, select, input[type="number"] {
+      border: 1px solid #354254;
+      border-radius: 8px;
+      background: #1b2532;
+      padding: 9px 12px;
+    }
+
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    button:hover:not(:disabled) { border-color: #54b4ff; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 24px;
+      border-bottom: 1px solid #283342;
+      background: #151c26;
+    }
+
+    h1 { margin: 0 0 5px; font-size: 20px; }
+    h2 { margin: 0 0 14px; font-size: 16px; }
+    p { margin: 0; color: #aab7c8; }
+    .subtle { color: #9cabbc; font-size: 13px; }
+
+    main { max-width: 1600px; margin: auto; padding: 20px 24px; }
+
+    .toolbar, .statusbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 13px;
+      margin-bottom: 16px;
+      border: 1px solid #283342;
+      border-radius: 12px;
+      background: #151c26;
+    }
+
+    .toolbar select { min-width: 230px; }
+    .primary { background: #1769aa; border-color: #2786ce; }
+    .danger { background: #5a2530; border-color: #873643; }
+    .success { color: #8de2b2; }
+    .error { color: #ff9a9a; }
+    .status-spacer { flex: 1; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
+      align-items: start;
+      gap: 16px;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid #283342;
+      border-radius: 12px;
+      background: #151c26;
+    }
+    .panel2{
+      min-width: 0;
+      max-height: 682px;
+      overflow-y: auto;
+      padding: 16px;
+      border: 1px solid #283342;
+      border-radius: 12px;
+      background: #151c26;
+    }
+
+    .image-wrap {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #080b10;
+      cursor: crosshair;
+    }
+
+    .image-wrap img { display: block; width: 100%; height: auto; }
+    .image-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .drop-line { stroke: #f2d35e; stroke-width: 3; stroke-dasharray: 9 6; }
+    .drop-line { pointer-events: none; }
+    .drop-point { fill: #ff605c; stroke: #fff; stroke-width: 2; }
+    .hero-point { fill: #38d99b; stroke: #fff; stroke-width: 2; }
+    .rage-point { fill: #a96bff; stroke: #fff; stroke-width: 2; }
+    .slot-point { fill: #35bded; stroke: #fff; stroke-width: 2; }
+    .point-active { fill: #fff35c; stroke: #10151d; stroke-width: 3; }
+    .point-handle { cursor: grab; pointer-events: all; touch-action: none; }
+    .point-handle:active { cursor: grabbing; }
+    .image-empty {
+      display: grid;
+      min-height: 260px;
+      place-items: center;
+      color: #aab7c8;
+      text-align: center;
+    }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 0; color: #aab7c8; font-size: 12px; }
+    .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--color); }
+
+    .group { padding: 13px 0; border-top: 1px solid #283342; }
+    .group:first-of-type { border-top: 0; }
+    .group-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+    .group-title strong { font-size: 14px; }
+    .row { display: grid; grid-template-columns: minmax(90px, 1fr) auto auto; align-items: center; gap: 8px; margin: 7px 0; }
+    .row-label { min-width: 0; color: #bac6d5; font-size: 13px; }
+    .coordinate-editor { display: inline-flex; align-items: center; gap: 5px; }
+    .coordinate-axis { display: inline-flex; align-items: center; gap: 3px; color: #8f9db0; font-size: 10px; }
+    .coordinate-editor input { width: 62px; padding: 7px 6px; font: 12px Consolas, monospace; }
+    .count-field { display: inline-flex; align-items: center; gap: 8px; color: #bac6d5; font-size: 13px; }
+    .count-field input { width: 68px; }
+    .toggle { display: inline-flex; align-items: center; gap: 8px; color: #bac6d5; font-size: 13px; }
+    .small-button { padding: 6px 9px; font-size: 12px; }
+    .logs {
+      max-height: 350px;
+      overflow: auto;
+      padding: 10px;
+      border: 1px solid #283342;
+      border-radius: 8px;
+      background: #0c1118;
+      color: #c9d5e4;
+      font: 12px/1.5 Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .logs:empty::after { content: "Chưa có log."; color: #738195; }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+
+    @media (max-width: 560px) {
+      header, main { padding: 14px; }
+      header { flex-direction: column; }
+      .toolbar select { width: 100%; }
+      .row { grid-template-columns: minmax(74px, 1fr) auto auto; gap: 5px; }
+      .coordinate-editor input { width: 55px; }
+      .row .small-button { padding: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div>
+        <h1>COC Bot · cấu hình & điều khiển</h1>
+        <p v-if="account">Tài khoản <strong>{{ account }}</strong> · thiết bị {{ device }}</p>
+        <p v-else>Đang tải cấu hình...</p>
+      </div>
+      <button @click="refreshScreenshot" :disabled="loadingScreenshot">
+        {{ loadingScreenshot ? "Đang chụp..." : "Chụp lại màn hình" }}
+      </button>
+    </header>
+
+    <main>
+      <section class="toolbar">
+        <label for="action">Action</label>
+        <select id="action" v-model="selectedAction" :disabled="runner.running">
+          <option v-for="action in actions" :key="action.value" :value="action.value">
+            {{ action.label }}
+          </option>
+        </select>
+        <button class="primary" @click="startAction" :disabled="runner.running || !selectedAction">
+          Chạy nền
+        </button>
+        <button class="danger" @click="stopAction" :disabled="!runner.running">
+          Dừng action
+        </button>
+        <span class="status-spacer"></span>
+        <strong :class="runner.running ? 'success' : 'subtle'">
+          {{ runner.running ? "Đang chạy nền" : "Đang dừng" }}
+        </strong>
+        <span v-if="runner.pid" class="subtle">PID {{ runner.pid }}</span>
+      </section>
+
+      <section class="statusbar" v-if="message || error">
+        <span v-if="message" class="success">{{ message }}</span>
+        <span v-if="error" class="error">{{ error }}</span>
+      </section>
+
+      <div class="layout">
+        <section class="panel">
+          <div class="group-title">
+            <div>
+              <h2>Chọn tọa độ trên screenshot</h2>
+              <p class="subtle">Kéo chấm trên ảnh, nhập X/Y bên phải, hoặc chọn mục rồi click lên ảnh.</p>
+            </div>
+          </div>
+          <div
+            v-if="screenshotUrl"
+            ref="imageWrap"
+            class="image-wrap"
+            @click="selectOnImage"
+            @pointermove="moveDraggedPoint"
+            @pointerup="endDragging"
+            @pointercancel="endDragging"
+          >
+            <img :src="screenshotUrl" alt="Screenshot emulator" @load="readImageSize">
+            <svg v-if="imageWidth && imageHeight" ref="overlaySvg" preserveAspectRatio="none">
+              <line
+                v-for="(line, index) in config.DROP_LINES"
+                :key="`line-${index}`"
+                class="drop-line"
+                :x1="line[0][0]" :y1="line[0][1]" :x2="line[1][0]" :y2="line[1][1]"
+              />
+              <circle
+                v-for="point in overlayPoints"
+                :key="point.id"
+                :class="[point.className, 'point-handle', point.id === selectedPointId ? 'point-active' : '']"
+                :cx="point.x" :cy="point.y" r="10"
+                @pointerdown.stop="startDragging($event, point)"
+                @click.stop
+              >
+                <title>{{ point.label }} ({{ point.x }}, {{ point.y }})</title>
+              </circle>
+            </svg>
+          </div>
+          <div v-else class="image-empty">
+            <p>{{ screenshotError || "Đang kết nối ADB để chụp màn hình..." }}</p>
+          </div>
+          <div class="legend">
+            <span style="--color:#f2d35e">Đường thả quân</span>
+            <span style="--color:#a96bff">Điểm Rage</span>
+            <span style="--color:#38d99b">Tướng</span>
+            <span style="--color:#35bded">Ô chọn lính/phép</span>
+          </div>
+          <p v-if="imageWidth && imageHeight" class="subtle" style="margin-top:8px">
+            Ảnh gốc: {{ imageWidth }}×{{ imageHeight }} px · đang hiển thị:
+            {{ displayWidth }}×{{ displayHeight }} px · tọa độ dùng theo ảnh gốc
+          </p>
+          <section class="panel" style="margin-top:16px">
+            <div class="group-title">
+              <div>
+                <h2>Log tiến trình nền</h2>
+                <p class="subtle">Action chạy bằng run_one.py và không khóa giao diện.</p>
+              </div>
+            </div>
+            <div ref="logsContainer" class="logs">{{ runnerLogText }}</div>
+          </section>
+        </section>
+
+        <div>
+          <section class="panel2">
+            <div class="group-title">
+              <div>
+                <h2>Tọa độ thả quân</h2>
+                <p class="subtle">Config Python là mặc định; lưu sẽ tạo JSON override cho {{ account || "tài khoản" }}.</p>
+              </div>
+              <button class="small-button" @click="saveConfig" :disabled="saving || !config">
+                {{ saving ? "Đang lưu..." : "Lưu JSON" }}
+              </button>
+            </div>
+
+            <div v-if="config">
+              <div class="group">
+                <div class="group-title"><strong>Ô chọn lính</strong></div>
+                <div class="row">
+                  <span class="row-label">Goblin</span>
+                  <coordinate-editor
+                    v-model="config.SLOT_GOBLIN"
+                    label="Ô Goblin"
+                    :max-x="maxCoordinateX"
+                    :max-y="maxCoordinateY"
+                  ></coordinate-editor>
+                  <button class="small-button" :class="{active: isActive('SLOT_GOBLIN')}" @click="arm('SLOT_GOBLIN', 'Ô Goblin')">Chọn ảnh</button>
+                </div>
+                <div class="row">
+                  <span class="row-label">Bình Rage</span>
+                  <coordinate-editor
+                    v-model="config.RAGE_SLOT"
+                    label="Ô Rage"
+                    :max-x="maxCoordinateX"
+                    :max-y="maxCoordinateY"
+                  ></coordinate-editor>
+                  <button class="small-button" :class="{active: isActive('RAGE_SLOT')}" @click="arm('RAGE_SLOT', 'Ô Rage')">Chọn ảnh</button>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="group-title"><strong>Đường thả lính</strong></div>
+                <div v-for="(line, index) in config.DROP_LINES" :key="`drop-${index}`">
+                  <div class="row">
+                    <span class="row-label">Đường {{ index + 1 }} · đầu</span>
+                    <coordinate-editor
+                      v-model="line[0]"
+                      :label="`Đầu đường ${index + 1}`"
+                      :max-x="maxCoordinateX"
+                      :max-y="maxCoordinateY"
+                    ></coordinate-editor>
+                    <button class="small-button" :class="{active: isActive(`line-${index}-0`)}" @click="armLine(index, 0)">Chọn ảnh</button>
+                  </div>
+                  <div class="row">
+                    <span class="row-label">Đường {{ index + 1 }} · cuối</span>
+                    <coordinate-editor
+                      v-model="line[1]"
+                      :label="`Cuối đường ${index + 1}`"
+                      :max-x="maxCoordinateX"
+                      :max-y="maxCoordinateY"
+                    ></coordinate-editor>
+                    <button class="small-button" :class="{active: isActive(`line-${index}-1`)}" @click="armLine(index, 1)">Chọn ảnh</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="group-title">
+                  <strong>Điểm thả Rage</strong>
+                  <label class="count-field">
+                    Số bình
+                    <input type="number" min="0" max="11" v-model.number="config.RAGE_MAX_DROPS">
+                  </label>
+                </div>
+                <div v-for="(point, index) in config.RAGE_DROP_POINTS" :key="`rage-${index}`" class="row">
+                  <span class="row-label">Điểm {{ index + 1 }}</span>
+                  <coordinate-editor
+                    v-model="config.RAGE_DROP_POINTS[index]"
+                    :label="`Điểm Rage ${index + 1}`"
+                    :max-x="maxCoordinateX"
+                    :max-y="maxCoordinateY"
+                  ></coordinate-editor>
+                  <button class="small-button" :class="{active: isActive(`rage-${index}`)}" @click="armPoint('RAGE_DROP_POINTS', index, `Điểm Rage ${index + 1}`)">Chọn ảnh</button>
+                  <button class="small-button" @click="removePoint('RAGE_DROP_POINTS', index)">Xóa</button>
+                </div>
+                <button class="small-button" @click="addPoint('RAGE_DROP_POINTS')" :disabled="config.RAGE_DROP_POINTS.length >= 11">
+                  + Thêm điểm Rage
+                </button>
+              </div>
+
+              <div class="group">
+                <div class="group-title">
+                  <strong>Tướng</strong>
+                  <label class="toggle">
+                    <input type="checkbox" v-model="config.DROP_HEROES">
+                    Bật thả tướng
+                  </label>
+                </div>
+                <label class="count-field">
+                  Số tướng
+                  <input type="number" min="0" max="4" v-model.number="config.HERO_COUNT" @change="ensureHeroPoints">
+                </label>
+                <div v-for="index in config.HERO_SLOT_POINTS.length" :key="`hero-${index - 1}`">
+                  <div class="row">
+                    <span class="row-label">Tướng {{ index }} · ô chọn</span>
+                    <coordinate-editor
+                      v-model="config.HERO_SLOT_POINTS[index - 1]"
+                      :label="`Ô chọn tướng ${index}`"
+                      :max-x="maxCoordinateX"
+                      :max-y="maxCoordinateY"
+                    ></coordinate-editor>
+                    <button class="small-button" :class="{active: isActive(`hero-slot-${index - 1}`)}" @click="armPoint('HERO_SLOT_POINTS', index - 1, `Ô chọn tướng ${index}`)">Chọn ảnh</button>
+                  </div>
+                  <div class="row">
+                    <span class="row-label">Tướng {{ index }} · thả</span>
+                    <coordinate-editor
+                      v-model="config.HERO_DROP_POINTS[index - 1]"
+                      :label="`Điểm thả tướng ${index}`"
+                      :max-x="maxCoordinateX"
+                      :max-y="maxCoordinateY"
+                    ></coordinate-editor>
+                    <button class="small-button" :class="{active: isActive(`hero-drop-${index - 1}`)}" @click="armPoint('HERO_DROP_POINTS', index - 1, `Điểm thả tướng ${index}`)">Chọn ảnh</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <button class="small-button" @click="resetConfig" :disabled="!hasOverrides || saving">
+                  Khôi phục config mặc định
+                </button>
+                <span v-if="hasOverrides" class="subtle">Đang dùng JSON override.</span>
+                <span v-else class="subtle">Đang dùng config mặc định từ Python.</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    const CoordinateEditor = {
+      props: {
+        modelValue: { type: Array, required: true },
+        label: { type: String, required: true },
+        maxX: { type: Number, default: 65535 },
+        maxY: { type: Number, default: 65535 }
+      },
+      emits: ["update:modelValue"],
+      template: `
+        <span class="coordinate-editor">
+          <label class="coordinate-axis">X
+            <input
+              type="number" min="0" step="1" :max="maxX"
+              :aria-label="label + ' X'"
+              :value="modelValue[0]"
+              @input="updateCoordinate(0, $event.target.value)"
+              @blur="$event.target.value = modelValue[0]"
+            >
+          </label>
+          <label class="coordinate-axis">Y
+            <input
+              type="number" min="0" step="1" :max="maxY"
+              :aria-label="label + ' Y'"
+              :value="modelValue[1]"
+              @input="updateCoordinate(1, $event.target.value)"
+              @blur="$event.target.value = modelValue[1]"
+            >
+          </label>
+        </span>
+      `,
+      methods: {
+        updateCoordinate(axis, rawValue) {
+          if (rawValue === "") return;
+          const parsed = Number.parseInt(rawValue, 10);
+          if (!Number.isInteger(parsed)) return;
+          const maximum = axis === 0 ? this.maxX : this.maxY;
+          const point = [...this.modelValue];
+          point[axis] = Math.max(0, Math.min(maximum, parsed));
+          this.$emit("update:modelValue", point);
+        }
+      }
+    };
+
+    createApp({
+      components: { CoordinateEditor },
+      data() {
+        return {
+          account: "",
+          device: "",
+          config: null,
+          actions: [],
+          selectedAction: "loop",
+          screenshotUrl: "",
+          screenshotError: "",
+          loadingScreenshot: false,
+          imageWidth: 0,
+          imageHeight: 0,
+          displayWidth: 0,
+          displayHeight: 0,
+          selection: null,
+          draggingPoint: null,
+          hasOverrides: false,
+          saving: false,
+          message: "",
+          error: "",
+          runner: { running: false, pid: null, action: null, logs: [] },
+          runnerTimer: null
+        };
+      },
+      computed: {
+        runnerLogText() {
+          return this.runner.logs.join("\n");
+        },
+        maxCoordinateX() {
+          return this.imageWidth ? this.imageWidth - 1 : 65535;
+        },
+        maxCoordinateY() {
+          return this.imageHeight ? this.imageHeight - 1 : 65535;
+        },
+        selectedPointId() {
+          return this.selection ? this.selection.id : "";
+        },
+        overlayPoints() {
+          if (!this.config) return [];
+          const points = [];
+          const add = (point, id, label, className, target) => {
+            if (point && point.length === 2) {
+              points.push({ x: point[0], y: point[1], id, label, className, target });
+            }
+          };
+          add(
+            this.config.SLOT_GOBLIN,
+            "SLOT_GOBLIN",
+            "Ô Goblin",
+            "slot-point",
+            { kind: "SLOT_GOBLIN" }
+          );
+          add(
+            this.config.RAGE_SLOT,
+            "RAGE_SLOT",
+            "Ô Rage",
+            "slot-point",
+            { kind: "RAGE_SLOT" }
+          );
+          this.config.DROP_LINES.forEach((line, index) => {
+            add(
+              line[0],
+              `line-${index}-0`,
+              `Đầu đường ${index + 1}`,
+              "drop-point",
+              { kind: "DROP_LINES", index, endpoint: 0 }
+            );
+            add(
+              line[1],
+              `line-${index}-1`,
+              `Cuối đường ${index + 1}`,
+              "drop-point",
+              { kind: "DROP_LINES", index, endpoint: 1 }
+            );
+          });
+          this.config.RAGE_DROP_POINTS.forEach((point, index) => {
+            add(
+              point,
+              `rage-${index}`,
+              `Điểm Rage ${index + 1}`,
+              "rage-point",
+              { kind: "RAGE_DROP_POINTS", index }
+            );
+          });
+          this.config.HERO_SLOT_POINTS.forEach((point, index) => {
+            add(
+              point,
+              `hero-slot-${index}`,
+              `Ô chọn tướng ${index + 1}`,
+              "hero-point",
+              { kind: "HERO_SLOT_POINTS", index }
+            );
+          });
+          this.config.HERO_DROP_POINTS.forEach((point, index) => {
+            add(
+              point,
+              `hero-drop-${index}`,
+              `Điểm thả tướng ${index + 1}`,
+              "hero-point",
+              { kind: "HERO_DROP_POINTS", index }
+            );
+          });
+          return points;
+        }
+      },
+      watch: {
+        runnerLogText() {
+          this.$nextTick(() => {
+            const container = this.$refs.logsContainer;
+            if (container) container.scrollTop = container.scrollHeight;
+          });
+        }
+      },
+      methods: {
+        async request(url, options = {}) {
+          const response = await fetch(url, options);
+          const body = await response.json();
+          if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+          return body;
+        },
+        async loadConfig() {
+          const data = await this.request("/api/config");
+          this.account = data.account;
+          this.device = data.device;
+          this.config = data.config;
+          this.actions = data.actions;
+          this.hasOverrides = data.hasOverrides;
+          if (!this.actions.some(action => action.value === this.selectedAction)) {
+            this.selectedAction = this.actions[0]?.value || "";
+          }
+        },
+        async refreshScreenshot() {
+          this.loadingScreenshot = true;
+          this.screenshotError = "";
+          try {
+            const response = await fetch(`/api/screenshot?t=${Date.now()}`);
+            if (!response.ok) {
+              const body = await response.json();
+              throw new Error(body.error || `HTTP ${response.status}`);
+            }
+            const blob = await response.blob();
+            if (this.screenshotUrl) URL.revokeObjectURL(this.screenshotUrl);
+            this.screenshotUrl = URL.createObjectURL(blob);
+          } catch (error) {
+            this.screenshotError = error.message;
+            this.error = error.message;
+          } finally {
+            this.loadingScreenshot = false;
+          }
+        },
+        readImageSize(event) {
+          this.imageWidth = event.target.naturalWidth;
+          this.imageHeight = event.target.naturalHeight;
+          this.$nextTick(this.updateDisplaySize);
+        },
+        updateDisplaySize() {
+          if (!this.$refs.imageWrap) return;
+          const rect = this.$refs.imageWrap.getBoundingClientRect();
+          this.displayWidth = Math.round(rect.width);
+          this.displayHeight = Math.round(rect.height);
+          if (this.$refs.overlaySvg) {
+            this.$refs.overlaySvg.setAttribute(
+              "viewBox",
+              `0 0 ${this.imageWidth} ${this.imageHeight}`
+            );
+          }
+        },
+        async refreshRunner() {
+          try {
+            this.runner = await this.request("/api/runner");
+          } catch (error) {
+            this.error = error.message;
+          }
+        },
+        async initialize() {
+          try {
+            await this.loadConfig();
+            await Promise.all([this.refreshScreenshot(), this.refreshRunner()]);
+          } catch (error) {
+            this.error = error.message;
+          }
+          this.runnerTimer = setInterval(this.refreshRunner, 2000);
+        },
+        arm(kind, label = kind) {
+          this.selection = { kind, id: kind, label };
+          this.message = `Chọn vị trí "${label}" bằng cách click lên ảnh.`;
+          this.error = "";
+        },
+        armLine(index, endpoint) {
+          const id = `line-${index}-${endpoint}`;
+          this.selection = {
+            kind: "DROP_LINES",
+            index,
+            endpoint,
+            id,
+            label: `${endpoint === 0 ? "Điểm đầu" : "Điểm cuối"} đường ${index + 1}`
+          };
+          this.message = `Chọn "${this.selection.label}" bằng cách click lên ảnh.`;
+          this.error = "";
+        },
+        armPoint(kind, index, label) {
+          const prefix = kind === "RAGE_DROP_POINTS"
+            ? "rage"
+            : kind === "HERO_SLOT_POINTS" ? "hero-slot" : "hero-drop";
+          this.selection = { kind, index, id: `${prefix}-${index}`, label };
+          this.message = `Chọn "${label}" bằng cách click lên ảnh.`;
+          this.error = "";
+        },
+        isActive(id) {
+          return this.selection && this.selection.id === id;
+        },
+        updateConfiguredPoint(target, point) {
+          if (target.kind === "DROP_LINES") {
+            this.config.DROP_LINES[target.index][target.endpoint] = point;
+          } else if (target.kind === "RAGE_DROP_POINTS") {
+            this.config.RAGE_DROP_POINTS[target.index] = point;
+          } else if (target.kind === "HERO_SLOT_POINTS") {
+            this.config.HERO_SLOT_POINTS[target.index] = point;
+          } else if (target.kind === "HERO_DROP_POINTS") {
+            this.config.HERO_DROP_POINTS[target.index] = point;
+          } else {
+            this.config[target.kind] = point;
+          }
+        },
+        imagePointAt(event) {
+          const rect = this.$refs.imageWrap.getBoundingClientRect();
+          return [
+            Math.max(0, Math.min(this.imageWidth - 1,
+              Math.round((event.clientX - rect.left) * this.imageWidth / rect.width))),
+            Math.max(0, Math.min(this.imageHeight - 1,
+              Math.round((event.clientY - rect.top) * this.imageHeight / rect.height)))
+          ];
+        },
+        startDragging(event, point) {
+          if (event.button !== 0) return;
+          this.draggingPoint = point.target;
+          this.selection = { ...point.target, id: point.id, label: point.label };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        },
+        moveDraggedPoint(event) {
+          if (!this.draggingPoint || !this.imageWidth || !this.imageHeight) return;
+          this.updateConfiguredPoint(this.draggingPoint, this.imagePointAt(event));
+        },
+        endDragging() {
+          this.draggingPoint = null;
+        },
+        selectOnImage(event) {
+          if (!this.selection || !this.imageWidth || !this.imageHeight) return;
+          const [x, y] = this.imagePointAt(event);
+          this.updateConfiguredPoint(this.selection, [x, y]);
+          this.message = `${this.selection.label}: (${x}, ${y})`;
+          this.selection = null;
+        },
+        addPoint(kind) {
+          if (kind === "RAGE_DROP_POINTS" && this.config[kind].length < 11) {
+            this.config[kind].push([0, 0]);
+          }
+        },
+        removePoint(kind, index) {
+          this.config[kind].splice(index, 1);
+          this.config.RAGE_MAX_DROPS = Math.min(
+            this.config.RAGE_MAX_DROPS,
+            this.config.RAGE_DROP_POINTS.length
+          );
+          this.selection = null;
+        },
+        ensureHeroPoints() {
+          const count = Math.max(0, Math.min(4, Number(this.config.HERO_COUNT) || 0));
+          this.config.HERO_COUNT = count;
+          for (const key of ["HERO_SLOT_POINTS", "HERO_DROP_POINTS"]) {
+            while (this.config[key].length < count) this.config[key].push([0, 0]);
+          }
+        },
+        async saveConfig() {
+          this.saving = true;
+          this.message = "";
+          this.error = "";
+          try {
+            await this.request("/api/config", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(this.config)
+            });
+            this.hasOverrides = true;
+            this.message = this.runner.running
+              ? "Đã lưu JSON. Action đang chạy dùng cấu hình cũ; dừng và chạy lại để áp dụng."
+              : "Đã lưu JSON override.";
+          } catch (error) {
+            this.error = error.message;
+          } finally {
+            this.saving = false;
+          }
+        },
+        async resetConfig() {
+          if (!window.confirm("Xóa JSON override và quay lại config Python mặc định?")) return;
+          this.error = "";
+          this.message = "";
+          try {
+            await this.request("/api/reset", { method: "POST" });
+            await this.loadConfig();
+            this.selection = null;
+            this.message = "Đã khôi phục config mặc định.";
+          } catch (error) {
+            this.error = error.message;
+          }
+        },
+        async startAction() {
+          this.error = "";
+          this.message = "";
+          try {
+            this.runner = await this.request("/api/runner/start", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: this.selectedAction })
+            });
+            this.message = "Action đã được khởi chạy ở background.";
+          } catch (error) {
+            this.error = error.message;
+          }
+        },
+        async stopAction() {
+          this.error = "";
+          try {
+            this.runner = await this.request("/api/runner/stop", { method: "POST" });
+            this.message = "Đã gửi yêu cầu dừng action.";
+          } catch (error) {
+            this.error = error.message;
+          }
+        }
+      },
+      mounted() {
+        window.addEventListener("resize", this.updateDisplaySize);
+        this.initialize();
+      },
+      beforeUnmount() {
+        window.removeEventListener("resize", this.updateDisplaySize);
+        if (this.runnerTimer) clearInterval(this.runnerTimer);
+        if (this.screenshotUrl) URL.revokeObjectURL(this.screenshotUrl);
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>

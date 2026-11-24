@@ -3,11 +3,13 @@ import sys
 import time
 import traceback
 from bot import Bot
+from drop_config import apply_drop_overrides
 
 name = sys.argv[1]                       # tên acc, vd: acc1
 action = sys.argv[2] if len(sys.argv) > 2 else "loop"
 
 cfg = importlib.import_module(f"accounts.{name}")
+apply_drop_overrides(cfg, name)
 bot = Bot(cfg)
 
 if action == "loop":
@@ -47,4 +49,6 @@ elif action == "onlyfarm":
             time.sleep(5)
 
 else:
-    getattr(bot, action)()               # chạy đúng 1 hàm để test
+    result = getattr(bot, action)()      # chạy đúng 1 hàm để test
+    if result is not None:
+        bot.log(f"Kết quả {action}: {result}")

@@ -4,3 +4,4 @@ __pycache__/
 *.py[cod]
 screenshots/debug_*.png
 dataset/images/
+accounts/*.drop.json
