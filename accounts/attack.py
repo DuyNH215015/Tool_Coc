@@ -17,4 +17,4 @@ DROP_HEROES = True
 HERO_COUNT = 3
 HERO_SLOT_POINTS = [(346, 647),(447, 647),(547, 650)]            # tọa độ chọn từng tướng trên thanh quân
 HERO_DROP_POINTS = [(135, 352),(135, 352),(135, 352)]            # tọa độ thả từng tướng trên chiến trường
-HERO_ABILITY_DELAY_SECONDS = 10  # sau bao nhiêu giây từ lúc thả thì bấm lại ô tướng
+HERO_ABILITY_DELAY_SECONDS = 7  # sau bao nhiêu giây từ lúc thả thì bấm lại ô tướng
